@@ -98,6 +98,20 @@ def setup(source_dir: Path, config: dict) -> None:
     - Writes .claude.json config
     - Writes global gitignore so CLAUDE.md never leaks into diffs
     """
+    try:
+        version_result = subprocess.run(
+            ["claude", "--version"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        logger.info(
+            "Claude Code CLI version: %s",
+            version_result.stdout.strip() or version_result.stderr.strip(),
+        )
+    except OSError as error:
+        logger.warning("Failed to get Claude Code version: %s", error)
+
     llm_api_url = config.get("llm_api_url", "")
     llm_api_key = config.get("llm_api_key", "")
 
