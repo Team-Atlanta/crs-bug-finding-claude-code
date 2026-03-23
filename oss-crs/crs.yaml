@@ -23,13 +23,16 @@ crs_run_phase:
   finder:
     dockerfile: oss-crs/finder.Dockerfile
     additional_env:
+      # Default values. To override, set additional_env in compose yaml.
       CRS_AGENT: claude_code
+      # CLAUDE_CODE_CLI_VERSION: "2.1.42"  # Optional prepare-phase override for base image build
       # ANTHROPIC_MODEL: claude-opus-4-6
       # CLAUDE_CODE_SUBAGENT_MODEL: claude-sonnet-4-6
       # ANTHROPIC_DEFAULT_OPUS_MODEL: claude-opus-4-6
       # ANTHROPIC_DEFAULT_SONNET_MODEL: claude-sonnet-4-6
       # ANTHROPIC_DEFAULT_HAIKU_MODEL: claude-haiku-4-5-20251001
       # AGENT_TIMEOUT: "0"  # seconds, 0 = no limit (default)
+      # BUILDER_MODULE: "inc-builder-asan"  # Builder sidecar module (must match run_snapshot module name)
   inc-builder-asan:
     run_snapshot: true
     dockerfile: oss-crs-infra:default-builder

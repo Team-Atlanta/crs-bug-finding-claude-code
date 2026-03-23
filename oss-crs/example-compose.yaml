@@ -20,6 +20,12 @@ crs-bug-finding-claude-code:
   memory: "16G"                                         # UPDATE: available memory
   llm_budget: 10                                        # LLM budget in USD
   additional_env:
+    # Override CRS defaults here. Optional prepare-phase CLI pin:
+    #   CLAUDE_CODE_CLI_VERSION: 2.1.42
+    # Available models:
+    #   claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5-20251001,
+    #   claude-opus-4-5-20251101, claude-opus-4-1-20250805,
+    #   claude-sonnet-4-5-20250929, claude-sonnet-4-20250514
     CRS_AGENT: claude_code
     ANTHROPIC_MODEL: claude-opus-4-6
     # CLAUDE_CODE_SUBAGENT_MODEL: claude-sonnet-4-6
