@@ -39,7 +39,7 @@ LLM_API_URL = os.environ.get("OSS_CRS_LLM_API_URL", "")
 LLM_API_KEY = os.environ.get("OSS_CRS_LLM_API_KEY", "")
 
 CRS_AGENT = os.environ.get("CRS_AGENT", "claude_code")
-BUILDER_MODULE = os.environ.get("BUILDER_MODULE", "inc-builder-asan")
+BUILDER_MODULE = os.environ.get("BUILDER_MODULE", "inc-builder")
 
 WORK_DIR = Path("/work")
 POV_DIR = WORK_DIR / "povs"
@@ -70,13 +70,11 @@ def setup_source() -> Path | None:
     source_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        project_dir = crs.download_source(SourceType.REPO, source_dir)
+        crs.download_source(SourceType.TARGET_SOURCE, source_dir)
+        project_dir = source_dir
     except Exception as repo_error:
         logger.error("Failed to download repo source via libCRS: %s", repo_error)
         return None
-
-    if project_dir is None:
-        project_dir = source_dir
 
     if not (project_dir / ".git").exists():
         logger.info("No .git found in %s, initializing git repo", project_dir)
