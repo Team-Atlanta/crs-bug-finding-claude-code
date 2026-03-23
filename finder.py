@@ -128,28 +128,9 @@ def load_agent(agent_name: str):
         sys.exit(1)
 
 
-def _copy_agent_logs(agent_work_dir: Path, log_dir: Path) -> None:
-    """Copy agent log/input files to the registered log dir for persistence."""
-    log_files = [
-        "claude_stdout.log",
-        "claude_stderr.log",
-        "claude_debug.log",
-        "agent_prompt.txt",
-        "agent_system_prompt.txt",
-        "agent_claude_md.md",
-        "agent_cmd.txt",
-    ]
-    for name in log_files:
-        src = agent_work_dir / name
-        if src.exists():
-            shutil.copy2(src, log_dir / name)
-            logger.info("Copied %s to log dir", name)
-
-
-def run_agent(source_dir: Path, build_dir: Path, agent, log_dir: Path) -> bool:
+def run_agent(source_dir: Path, build_dir: Path, agent) -> bool:
     """Run the agent for vulnerability discovery."""
     agent_work_dir = WORK_DIR / "agent"
-    agent_work_dir.mkdir(parents=True, exist_ok=True)
 
     run_sig = inspect.signature(agent.run)
     run_kwargs = {
@@ -171,12 +152,7 @@ def run_agent(source_dir: Path, build_dir: Path, agent, log_dir: Path) -> bool:
         if key in run_sig.parameters:
             run_kwargs[key] = value
 
-    result = bool(agent.run(**run_kwargs))
-
-    # Copy agent logs to registered log dir for persistence
-    _copy_agent_logs(agent_work_dir, log_dir)
-
-    return result
+    return bool(agent.run(**run_kwargs))
 
 
 def main():
@@ -288,6 +264,16 @@ def main():
             "Builder sidecar DNS check failed at startup; continuing and relying on libCRS command-level retries"
         )
 
+    # Register agent work directory as a log dir so agent logs are persisted
+    # in real-time (survives SIGTERM on timeout).
+    agent_work_dir = WORK_DIR / "agent"
+    try:
+        crs.register_log_dir(agent_work_dir)
+        logger.info("Agent work dir registered as log dir at %s", agent_work_dir)
+    except Exception as e:
+        logger.warning("Failed to register agent work log dir: %s", e)
+        agent_work_dir.mkdir(parents=True, exist_ok=True)
+
     # Load and run agent
     agent = load_agent(CRS_AGENT)
     agent.setup(source_dir, {
@@ -295,7 +281,7 @@ def main():
         "llm_api_key": LLM_API_KEY,
     })
 
-    if run_agent(source_dir, build_dir, agent, log_dir):
+    if run_agent(source_dir, build_dir, agent):
         logger.info("Agent completed successfully")
     else:
         logger.warning("Agent did not report success")
