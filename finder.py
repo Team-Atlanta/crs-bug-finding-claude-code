@@ -215,7 +215,9 @@ def main():
         logger.warning("Failed to register log dir: %s", e)
         log_dir.mkdir(parents=True, exist_ok=True)
 
-    # Setup .claude home (shared dir for persistent Claude state)
+    # Register Claude home as a log directory for post-run analysis.
+    # register_log_dir creates a symlink, so the path must not exist beforehand.
+    # Preserve existing Claude home and restore it if registration fails.
     claude_home = Path.home() / ".claude"
     claude_home_backup = claude_home.with_name(".claude.pre-crs-backup")
     had_existing_claude_home = claude_home.exists() or claude_home.is_symlink()
@@ -226,12 +228,12 @@ def main():
         claude_home.rename(claude_home_backup)
 
     try:
-        crs.register_shared_dir(claude_home, "claude-home")
-        logger.info("Claude home shared at %s", claude_home)
+        crs.register_log_dir(claude_home)
+        logger.info("Claude home registered as log dir at %s", claude_home)
         if claude_home_backup.exists() or claude_home_backup.is_symlink():
             logger.info("Preserved previous Claude home backup at %s", claude_home_backup)
     except Exception as e:
-        logger.warning("Failed to register claude-home shared dir: %s", e)
+        logger.warning("Failed to register claude-home log dir: %s", e)
         if claude_home.exists() or claude_home.is_symlink():
             if claude_home.is_symlink() or claude_home.is_file():
                 claude_home.unlink()
@@ -239,7 +241,9 @@ def main():
                 shutil.rmtree(claude_home)
         if claude_home_backup.exists() or claude_home_backup.is_symlink():
             claude_home_backup.rename(claude_home)
-        claude_home.mkdir(parents=True, exist_ok=True)
+            logger.info("Restored previous Claude home from backup")
+        else:
+            claude_home.mkdir(parents=True, exist_ok=True)
 
     # Setup source
     source_dir = setup_source()
