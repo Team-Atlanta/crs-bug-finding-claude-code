@@ -278,7 +278,6 @@ def run(
     ])
     prompt = "\n".join(prompt_lines)
 
-    debug_log = work_dir / "claude_debug.log"
     stdout_log = work_dir / "claude_stdout.log"
     stderr_log = work_dir / "claude_stderr.log"
 
@@ -291,7 +290,6 @@ def run(
         "claude",
         "-p",
         "--dangerously-skip-permissions",
-        "--debug-file", str(debug_log),
         "--append-system-prompt", system_prompt,
     ]
 
