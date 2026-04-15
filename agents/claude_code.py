@@ -66,7 +66,7 @@ def _list_input_files(input_dir: Path, *, non_empty_only: bool = False) -> list[
     return [f for f in files if f.read_text(errors="replace").strip()]
 
 
-def _install_skills(source_dir: Path, harness: str, builder: str) -> None:
+def _install_skills(source_dir: Path, harness: str) -> None:
     """Copy skills from package data into source_dir/.claude/skills/, filling placeholders."""
     target_skills = source_dir / ".claude" / "skills"
     if not _SKILLS_DIR.exists():
@@ -80,12 +80,11 @@ def _install_skills(source_dir: Path, harness: str, builder: str) -> None:
         if dest.exists():
             shutil.rmtree(dest)
         shutil.copytree(skill_dir, dest)
-        # Fill {harness}, {builder}, {source_dir} placeholders in SKILL.md
+        # Fill {harness}, {source_dir} placeholders in SKILL.md
         skill_md = dest / "SKILL.md"
         if skill_md.exists():
             content = skill_md.read_text()
             content = content.replace("{harness}", harness)
-            content = content.replace("{builder}", builder)
             content = content.replace("{source_dir}", str(source_dir))
             skill_md.write_text(content)
         logger.info("Installed skill: %s", skill_dir.name)
@@ -183,7 +182,6 @@ def run(
     *,
     language: str = "c",
     sanitizer: str = "address",
-    builder: str,
 ) -> bool:
     """Launch Claude Code in agentic mode to autonomously find vulnerabilities.
 
@@ -200,7 +198,7 @@ def run(
         logger.error("Failed to load prompt template(s): %s", e)
         return False
 
-    _install_skills(source_dir, harness, builder)
+    _install_skills(source_dir, harness)
 
     diffs = _list_input_files(diff_dir, non_empty_only=True)
     seeds = _list_input_files(seed_dir)
@@ -241,7 +239,6 @@ def run(
         build_dir=build_dir,
         work_dir=work_dir,
         harness=harness,
-        builder=builder,
         pov_dir=pov_dir,
         workflow_section=templates["workflow_find"],
         diff_section=diff_section,

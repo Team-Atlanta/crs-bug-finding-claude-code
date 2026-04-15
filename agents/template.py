@@ -29,7 +29,6 @@ def run(
     *,
     language: str = "c",
     sanitizer: str = "address",
-    builder: str,
 ) -> bool:
     """Run the agent autonomously for vulnerability discovery.
 
@@ -37,7 +36,7 @@ def run(
     1. Analyze source code and available evidence (diffs, seeds, bug-candidates)
     2. Identify potential vulnerabilities reachable through the harness
     3. Craft inputs that trigger crashes (POVs)
-    4. Verify each POV via `libCRS run-pov` (uses builder sidecar)
+    4. Verify each POV via `libCRS run-pov`
     5. Write verified POVs to pov_dir/ (auto-submitted by libCRS daemon)
 
     Returns True if the agent believes it found vulnerabilities.
