@@ -21,7 +21,7 @@ import threading
 import time
 from pathlib import Path
 
-from libCRS.base import DataType, SourceType
+from libCRS.base import DataType
 from libCRS.cli.main import init_crs_utils
 
 logging.basicConfig(
@@ -39,9 +39,9 @@ LLM_API_URL = os.environ.get("OSS_CRS_LLM_API_URL", "")
 LLM_API_KEY = os.environ.get("OSS_CRS_LLM_API_KEY", "")
 
 CRS_AGENT = os.environ.get("CRS_AGENT", "claude_code")
-BUILDER_MODULE = os.environ.get("BUILDER_MODULE", "inc-builder")
 
 WORK_DIR = Path("/work")
+SRC_DIR = Path("/src")
 POV_DIR = WORK_DIR / "povs"
 DIFF_DIR = WORK_DIR / "diffs"
 BUG_CANDIDATE_DIR = WORK_DIR / "bug-candidates"
@@ -51,7 +51,7 @@ crs = None
 
 
 def setup_source() -> Path | None:
-    """Download source code and locate the project source directory."""
+    """Download build-output /src and prepare it as the working directory."""
     safe_dir_proc = subprocess.run(
         ["git", "config", "--system", "--add", "safe.directory", "*"],
         capture_output=True,
@@ -66,15 +66,13 @@ def setup_source() -> Path | None:
                 "Failed to configure git safe.directory in both --system and --global scopes"
             )
 
-    source_dir = WORK_DIR / "src"
-    source_dir.mkdir(parents=True, exist_ok=True)
-
     try:
-        crs.download_source(SourceType.TARGET_SOURCE, source_dir)
-        project_dir = source_dir
-    except Exception as repo_error:
-        logger.error("Failed to download repo source via libCRS: %s", repo_error)
+        crs.download_build_output("src", SRC_DIR)
+    except Exception as e:
+        logger.error("Failed to download /src build output via libCRS: %s", e)
         return None
+
+    project_dir = SRC_DIR.resolve()
 
     if not (project_dir / ".git").exists():
         logger.info("No .git found in %s, initializing git repo", project_dir)
@@ -105,17 +103,6 @@ def setup_source() -> Path | None:
     return project_dir
 
 
-def wait_for_builder() -> bool:
-    """Fail-fast DNS check for the builder sidecar."""
-    try:
-        domain = crs.get_service_domain(BUILDER_MODULE)
-        logger.info("Builder sidecar '%s' resolved to %s", BUILDER_MODULE, domain)
-        return True
-    except RuntimeError as e:
-        logger.error("Failed to resolve builder domain for '%s': %s", BUILDER_MODULE, e)
-        return False
-
-
 def load_agent(agent_name: str):
     """Dynamically load an agent module from the agents package."""
     module_name = f"agents.{agent_name}"
@@ -144,7 +131,6 @@ def run_agent(source_dir: Path, build_dir: Path, agent) -> bool:
     optional_kwargs = {
         "language": LANGUAGE,
         "sanitizer": SANITIZER,
-        "builder": BUILDER_MODULE,
     }
     for key, value in optional_kwargs.items():
         if key in run_sig.parameters:
@@ -259,12 +245,6 @@ def main():
     except Exception as e:
         logger.error("Failed to download build outputs: %s", e)
         sys.exit(1)
-
-    # Wait for builder sidecar
-    if not wait_for_builder():
-        logger.warning(
-            "Builder sidecar DNS check failed at startup; continuing and relying on libCRS command-level retries"
-        )
 
     # Register agent work directory as a log dir so agent logs are persisted
     # in real-time (survives SIGTERM on timeout).
