@@ -1,7 +1,7 @@
 name: crs-bug-finding-claude-code
 type:
   - bug-finding
-version: 1.0.0
+version: cli-2.0.17
 docker_registry: ghcr.io/team-atlanta/crs-bug-finding-claude-code
 
 prepare_phase:
