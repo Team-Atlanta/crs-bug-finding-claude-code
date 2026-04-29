@@ -213,8 +213,7 @@ def run(
 
     # Build seeds section
     if seeds:
-        seed_list = "\n".join(f"- {_md_inline(str(p))}" for p in seeds)
-        seed_section = templates["seeds_present"].format(seed_list=seed_list)
+        seed_section = templates["seeds_present"].format(seed_dir=_md_inline(str(seed_dir)))
     else:
         seed_section = ""
 
@@ -263,8 +262,7 @@ def run(
         diff_files = " ".join(_md_inline(str(p)) for p in diffs)
         prompt_lines.append(f"- Diff files: {diff_files}")
     if seeds:
-        seed_files = " ".join(_md_inline(str(p)) for p in seeds)
-        prompt_lines.append(f"- Seed files: {seed_files}")
+        prompt_lines.append(f"- Seed directory: {_md_inline(str(seed_dir))}")
     if bug_candidates:
         bug_files = " ".join(_md_inline(str(p)) for p in bug_candidates)
         prompt_lines.append(f"- Bug-candidate report files: {bug_files}")
